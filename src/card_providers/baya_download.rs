@@ -2,13 +2,13 @@
 
 use std::{
     io::{self, Write},
-    path::PathBuf,
+    path::Path,
     thread,
     time::Duration,
 };
 
 use crate::{
-    tavern_card_v2::*,
+    card_formats::tavern_card_v2::*,
     tools::{self, write_image_to_file},
 };
 
@@ -88,7 +88,7 @@ struct ModelFamily {
     promptFormat: String,
 }
 
-pub fn download_card_from_baya_url(url: &str) -> Result<()> {
+pub fn download_card_from_baya_url(url: &str, output_path: &Path) -> Result<()> {
     // Forcibly flush stdout before blocking operations, otherwise the line before long operations does not display.
     let flush = || io::stdout().flush().unwrap();
 
@@ -147,7 +147,7 @@ pub fn download_card_from_baya_url(url: &str) -> Result<()> {
 
     let tavern_image =
         tavern_card.into_png_image().context("Could not write tavern card")?;
-    let card_name = PathBuf::from(format!("{}.png", display_char_name));
+    let card_name = output_path.join(format!("{}.png", display_char_name));
     write_image_to_file(&tavern_image, &card_name)?;
     println!("Done!");
     print!("Fap away!");

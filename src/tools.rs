@@ -74,7 +74,7 @@ pub fn convert_to_png(image_data: &Bytes) -> Result<Bytes> {
 
 /// Return the default image (in PNG format)
 pub fn get_default_image() -> Bytes {
-    Bytes::from_static(include_bytes!("no_face.png"))
+    Bytes::from_static(include_bytes!("../assets/images/no_face.png"))
 }
 
 /// Adds a key-value tEXt chunk to PNG.
@@ -143,4 +143,31 @@ pub fn read_text_chunk(
     }
     // If we didn't find the chunk, return None
     Ok(None)
+}
+
+/// Removes a tEXt chunk with a given key from a PNG image.
+pub fn remove_text_chunk(image_data: &Bytes, chunk_key: &str) -> Result<Bytes> {
+    let decoder = png::Decoder::new(image_data.as_ref());
+    let mut reader = decoder.read_info()?;
+    let png_info = reader.info().clone();
+
+    let mut output_vec: Vec<u8> = Vec::new();
+
+    let mut info_out = png_info.clone();
+    info_out
+        .uncompressed_latin1_text
+        .retain(|x| x.keyword.to_lowercase() != chunk_key.to_lowercase());
+
+    let mut encoder = png::Encoder::with_info(&mut output_vec, info_out)?;
+    encoder.set_depth(png_info.bit_depth);
+
+    let mut writer = encoder.write_header()?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    while let Ok(info) = reader.next_frame(&mut buf) {
+        let frame_bytes = &buf[..info.buffer_size()];
+        writer.write_image_data(&frame_bytes)?;
+    }
+    drop(buf);
+    drop(writer);
+    Ok(Bytes::from(output_vec))
 }

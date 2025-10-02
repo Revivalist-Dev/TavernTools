@@ -6,7 +6,7 @@ use anyhow::{bail, Result};
 use log::info;
 
 use crate::{
-    tavern_card_v2::TavernCardV2,
+    card_formats::tavern_card_v2::TavernCardV2,
     tools::{self, read_image_from_file},
 };
 

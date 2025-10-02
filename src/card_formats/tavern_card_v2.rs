@@ -39,29 +39,16 @@ pub struct CharacterBookEntry {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq)]
-pub struct TavernCardV3 {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub creatorcomment: Option<String>,
-    pub personality: Option<String>,
-    pub first_mes: Option<String>,
-    pub avatar: Option<String>,
-    pub mes_example: Option<String>,
-    pub scenario: Option<String>,
-    pub create_date: Option<String>,
-    pub talkativeness: Option<String>,
-    pub creator: Option<String>,
-    pub tags: Option<Vec<String>>,
-    pub fav: Option<bool>,
+pub struct TavernCardV2 {
     pub spec: Option<String>,
     pub spec_version: Option<String>,
-    pub data: CharacterDataV3,
+    pub data: CharacterData,
     #[serde(skip)]
     pub image_data: Option<Bytes>, // For keeping PNG image along
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default, PartialEq)]
-pub struct CharacterDataV3 {
+pub struct CharacterData {
     pub name: Option<String>,
     pub description: Option<String>,
     pub personality: Option<String>,
@@ -78,12 +65,11 @@ pub struct CharacterDataV3 {
     pub character_version: Option<String>,
     pub extensions:
         Option<std::collections::HashMap<String, serde_json::Value>>,
-    pub group_only_greetings: Option<Vec<String>>,
 }
 
-impl TavernCardV3 {
+impl TavernCardV2 {
     pub fn new() -> Self {
-        let mut s = TavernCardV3::default();
+        let mut s = TavernCardV2::default();
         s.improve_card();
         s
     }
@@ -122,14 +108,14 @@ impl TavernCardV3 {
                 "{} entry in PNG tEXt chunks does not start with '{{'",
                 TEXT_KEY_PNG
             );
-        }
+        } // Added missing brace
         // Try to convert tag into tavern card data
-        let mut card = serde_json::from_slice::<TavernCardV3>(&text);
+        let mut card = serde_json::from_slice::<TavernCardV2>(&text);
         if card.is_err() {
             // Sometimes the tag contains only the data portion
-            match serde_json::from_slice::<CharacterDataV3>(&text) {
+            match serde_json::from_slice::<CharacterData>(&text) {
                 Ok(card_data) => {
-                    card = Ok(TavernCardV3 {
+                    card = Ok(TavernCardV2 {
                         data: card_data,
                         ..Default::default()
                     });
@@ -151,10 +137,10 @@ impl TavernCardV3 {
     /// Make changes to better conform the specification
     fn improve_card(&mut self) {
         if self.spec.is_none() {
-            self.spec = Some("chara_card_v3".to_string());
+            self.spec = Some("chara_card_v2".to_string());
         }
         if self.spec_version.is_none() {
-            self.spec_version = Some("3.0".to_string());
+            self.spec_version = Some("2.0".to_string());
         }
         if self.data.name.is_none() {
             self.data.name = Some("".to_string());
@@ -165,7 +151,7 @@ impl TavernCardV3 {
     }
 }
 
-impl Display for TavernCardV3 {
+impl Display for TavernCardV2 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Turns &Option<String> into &str
         fn no_opt(o: &Option<String>) -> &str {
@@ -241,30 +227,14 @@ mod tests {
     #[allow(unused_imports)]
     use tools;
 
-    fn create_test_card() -> TavernCardV3 {
-        let mut card = TavernCardV3::new();
-        card.name = Some(String::from("Test name"));
-        card.description = Some(String::from("Test description"));
-        card.creatorcomment = Some(String::from("Test creator comment"));
-        card.personality = Some(String::from("Test personality"));
-        card.first_mes = Some(String::from("Test first message"));
-        card.avatar = Some(String::from("none"));
-        card.mes_example = Some(String::from("Test dialog example"));
-        card.scenario = Some(String::from("Test scenario"));
-        card.create_date = Some(String::from("2025-01-01"));
-        card.talkativeness = Some(String::from("0.5"));
-        card.creator = Some(String::from("Test creator"));
-        card.tags = Some(vec![String::from("tag1"), String::from("tag2")]);
-        card.fav = Some(false);
-        card.spec = Some(String::from("chara_card_v3"));
-        card.spec_version = Some(String::from("3.0"));
-
-        card.data.name = Some(String::from("Test name data"));
-        card.data.description = Some(String::from("Test description data"));
-        card.data.personality = Some(String::from("Test personality data"));
-        card.data.scenario = Some(String::from("Test scenario data"));
-        card.data.first_mes = Some(String::from("Test first message data"));
-        card.data.mes_example = Some(String::from("Test dialog example data"));
+    fn create_test_card() -> TavernCardV2 {
+        let mut card = TavernCardV2::new();
+        card.data.name = Some(String::from("Test name"));
+        card.data.description = Some(String::from("Test description"));
+        card.data.personality = Some(String::from("Test personality"));
+        card.data.scenario = Some(String::from("Test scenario"));
+        card.data.first_mes = Some(String::from("Test first message"));
+        card.data.mes_example = Some(String::from("Test dialog example"));
         card.data.character_book = Some(CharacterBook::default());
         let mut entry1 = CharacterBookEntry::default();
         entry1.content = String::from("Test book entry 1");
@@ -291,7 +261,7 @@ mod tests {
     fn test_write_and_read() -> Result<()> {
         let card = create_test_card();
         let image = card.into_png_image()?;
-        let card2 = TavernCardV3::from_png_image(&image)?;
+        let card2 = TavernCardV2::from_png_image(&image)?;
         assert_eq!(card, card2);
         // tools::write_image_to_file(&image, &std::path::Path::new("testing/test_card.png"))?;
         Ok(())
