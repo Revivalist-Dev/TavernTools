@@ -8,6 +8,7 @@ mod actions;
 mod baya_download;
 mod deasterisk;
 mod tavern_card_v2;
+mod tavern_card_v3;
 mod tools;
 //mod example;
 

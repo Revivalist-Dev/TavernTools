@@ -108,7 +108,6 @@ impl TavernCardV2 {
                 "{} entry in PNG tEXt chunks does not start with '{{'",
                 TEXT_KEY_PNG
             );
-        }
         // Try to convert tag into tavern card data
         let mut card = serde_json::from_slice::<TavernCardV2>(&text);
         if card.is_err() {
@@ -131,6 +130,7 @@ impl TavernCardV2 {
         }
         let mut card = card.unwrap();
         card.image_data = Some(image_data.clone());
+        Ok(card)
         Ok(card)
     }
 
